@@ -108,7 +108,11 @@ firebase-debug.*.log
 # Google Cloud
 gcp-key.json
 service-account.json
-*.json
+# *.json  <-- TROP AGRESSIF, cela ignorait package.json !
+*-sa.json
+service-account.json
+firebase-service-account.json
+gcp-key.json
 
 # AWS
 .aws/

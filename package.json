@@ -1,0 +1,27 @@
+{
+  "name": "travelmate",
+  "version": "1.0.0",
+  "description": "Planificateur de voyages collaboratif - Projet de fin de module",
+  "main": "index.js",
+  "scripts": {
+    "setup": "node -e \"console.log('🚀 Configuration automatique TravelMate...'); require('child_process').execSync('cp backend/env.local backend/.env', {stdio: 'inherit'}); require('child_process').execSync('cp frontend/env.local frontend/.env', {stdio: 'inherit'}); console.log('✅ Configuration terminée !');\"",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm test",
+    "deploy": "npm run deploy:backend && npm run deploy:frontend",
+    "deploy:backend": "cd backend && npm run deploy",
+    "deploy:frontend": "cd frontend && npm run deploy"
+  },
+  "keywords": ["travel", "collaborative", "planning", "cloud", "gcp", "aws"],
+  "author": "Votre nom",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
