@@ -1,0 +1,21 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Règles pour les fichiers des utilisateurs
+    match /users/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Règles pour les fichiers des voyages
+    match /trips/{tripId}/{allPaths=**} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid in firestore.get(/databases/(default)/documents/trips/$(tripId)).data.participants;
+    }
+    
+    // Règles pour les fichiers publics (avatars, etc.)
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}
