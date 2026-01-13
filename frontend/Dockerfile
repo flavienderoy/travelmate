@@ -14,6 +14,8 @@ COPY nginx.conf.template /etc/nginx/conf.d/default.conf.template
 # Configuration du port par défaut (si Railway ne le définit pas)
 # Utilisation de envsubst pour injecter le PORT au démarrage
 COPY entrypoint.sh /
+# FIX: Convert CRLF to LF in case the file was saved on Windows
+RUN sed -i 's/\r$//' /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]
