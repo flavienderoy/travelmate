@@ -40,13 +40,24 @@ Dans l'écran de configuration "Configure Project" :
 2.  Attendez ~1 minute. Vous devriez voir un feu d'artifice ! 🎉
 3.  Cliquez sur l'image de votre site pour voir l'URL (ex: `travelmate.vercel.app`).
 
-## 5. Dernière Étape : Connecter le Backend
+## 5. Connecter le Backend
 
 Une fois que vous avez votre URL Vercel (ex: `https://travelmate.vercel.app`) :
 
-1.  Copiez-la.
-2.  Revenez me voir pour qu'on mette à jour le Backend (CORS) afin qu'il accepte les requêtes venant de Vercel.
+1.  Mettez à jour le Backend (CORS) afin qu'il accepte les requêtes venant de Vercel.
 
----
+## 6. 🛡️ Configuration Firebase (Google Auth)
 
-*(Si vous avez une erreur 404 en rafraîchissant une page, c'est que le fichier `vercel.json` n'a pas été pris en compte, mais normalement c'est bon !)*
+C'est l'erreur "Domaine non autorisé" ! Par sécurité, Firebase bloque les tentatives de connexion venant de sites inconnus.
+
+1.  Allez sur la [Console Firebase](https://console.firebase.google.com/).
+2.  Ouvrez votre projet **travelmate-ynov**.
+3.  Dans le menu de gauche, allez dans **Authentication**.
+4.  Allez dans l'onglet **Settings** (Paramètres).
+5.  Cherchez la section **Authorized Domains**.
+6.  Cliquez sur **Add Domain**.
+7.  Ajoutez votre domaine Vercel (sans `https://`) :
+    *   Exemple : `travelmate-pi-eight.vercel.app`
+8.  Cliquez sur **Add**.
+
+C'est instantané. Réessayez de vous connecter sur votre site, ça marchera ! 🎉
