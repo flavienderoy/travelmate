@@ -1,177 +1,118 @@
-# TravelMate - Planificateur de voyages collaboratif
+# 🌍 TravelMate - Cloud Native Travel Planner
 
-## 🎯 Description du projet
+![TravelMate Banner](https://img.shields.io/badge/Travel-Mate-blue) ![License](https://img.shields.io/badge/License-MIT-green) ![Status](https://img.shields.io/badge/Status-Deployed-success)
 
-TravelMate est une application web collaborative qui permet à plusieurs amis ou membres d'un groupe de planifier ensemble un voyage. L'application facilite la gestion des itinéraires, des logements, du budget et des listes de tâches partagées.
+TravelMate est une application **Cloud Native** permettant de planifier des voyages en groupe, de gérer des budgets et des itinéraires en temps réel.
+Ce projet a été conçu pour valider les compétences de **Développement pour le Cloud**, **Architecture Microservices**, **CI/CD** et **Monitoring**.
 
-## 🏗️ Architecture
+🔗 **Accès Application** : [https://travelmate-pi-eight.vercel.app](https://travelmate-pi-eight.vercel.app)
+🔗 **Documentation API** : [http://localhost:3001/api-docs](http://localhost:3001/api-docs) (Local)
 
-### Stack technique
-- **Front-end** : React + Vite
-- **Back-end** : Node.js / Express
-- **Base de données** : Firestore (NoSQL)
-- **Hébergement** :
-  - Front : Firebase Hosting (GCP) + AWS S3/CloudFront
-  - Back : Cloud Run (GCP)
-- **Stockage** : Cloud Storage (GCP) + AWS S3
-- **Authentification** : Firebase Auth (Google Sign-In)
-- **API externe** : Google Maps Platform (Places, Directions)
+---
 
-### Architecture globale
-- Architecture microservices légère (front + back séparés)
-- Données synchronisées en temps réel via Firestore
-- Stockage et CDN fournis par GCP et AWS
-- Sécurité via authentification et gestion des secrets (Secret Manager)
+## 🏗️ Architecture Cloud
 
-## 🚀 Services utilisés
+L'application repose sur une architecture découplée et serverless pour maximiser la scalabilité et réduire les coûts.
 
-### Google Cloud Platform
-- Cloud Run (déploiement du backend Express)
-- Firebase (Hosting, Auth, Firestore)
-- Cloud Storage (médias)
-- Secret Manager (variables d'environnement)
-- Cloud Monitoring & Logging
-- App Engine (déploiement frontend alternatif)
+| Composant | Technologie | Hébergement | Description |
+| :--- | :--- | :--- | :--- |
+| **Frontend** | React (Vite) | **Vercel** + Firebase Hosting | Application SPA rapide et optimisée CDN. |
+| **Backend** | Node.js (Express) | **Google Cloud Run** | API REST conteneurisée (Docker), auto-scaling de 0 à N instances. |
+| **Database** | Firestore | **Firebase** | Base de données NoSQL temps réel (synchronisation auto). |
+| **Auth** | Firebase Auth | **Firebase** | Gestion des utilisateurs sécurisée (Google Sign-In). |
+| **Storage** | Cloud Storage | **GCP** | Stockage des photos et documents de voyage. |
 
-### Amazon Web Services
-- S3 (stockage statique)
-- CloudFront (CDN)
-- Route 53 (DNS)
+### Schéma de Communication
+`Utilisateur` ↔ `Vercel (Frontend)` ↔ `Cloud Run (Backend)` ↔ `Firestore / Storage`
 
-## 📋 Fonctionnalités
-
-### Pour chaque utilisateur
-- ✅ Créer un voyage et inviter des participants
-- ✅ Ajouter des étapes d'itinéraire avec carte interactive (Google Maps)
-- ✅ Gérer un budget commun (hébergement, transport, activités)
-- ✅ Créer et suivre une liste de tâches partagée
-- ✅ Consulter un récapitulatif global (itinéraire + budget + checklist)
-
-## 🛠️ Installation et développement local
-
-### Prérequis
-- Node.js 18+
-- npm ou yarn
-- Compte Google Cloud Platform
-- Compte Amazon Web Services
-- Compte Firebase
-
-### Installation
-```bash
-# Cloner le repository
-git clone <votre-repo>
-cd travelmate
-
-# Installer les dépendances
-npm install
-
-# Installer les dépendances du backend
-cd backend && npm install && cd ..
-
-# Installer les dépendances du frontend
-cd frontend && npm install && cd ..
-
-# Copier les fichiers d'environnement
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
-```
-
-### Configuration des variables d'environnement
-
-#### Backend (.env)
-```env
-PORT=3001
-NODE_ENV=development
-GOOGLE_CLOUD_PROJECT_ID=votre-project-id
-FIREBASE_PROJECT_ID=votre-firebase-project
-GOOGLE_MAPS_API_KEY=votre-google-maps-key
-JWT_SECRET=votre-jwt-secret
-```
-
-#### Frontend (.env)
-```env
-VITE_API_URL=http://localhost:3001
-VITE_FIREBASE_API_KEY=votre-firebase-api-key
-VITE_FIREBASE_AUTH_DOMAIN=votre-project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=votre-project-id
-VITE_GOOGLE_MAPS_API_KEY=votre-google-maps-key
-```
-
-### Démarrage en développement
-```bash
-# Démarrer les deux services en parallèle
-npm run dev
-
-# Ou séparément
-npm run dev:backend  # Backend sur http://localhost:3001
-npm run dev:frontend  # Frontend sur http://localhost:5173
-```
+---
 
 ## 🚀 Déploiement
 
-### Backend (Cloud Run)
+Le projet utilise deux fournisseurs Cloud majeurs (Multi-Cloud Approach) :
+
+### 1. Backend (Google Cloud Platform)
+Le backend est packagé dans un conteneur **Docker** et déployé sur **Cloud Run**.
+- **Variables d'environnement** : Gérées via `env_vars.yaml` injecté au déploiement.
+- **Commande de déploiement** :
+  ```bash
+  gcloud run deploy travelmate-api --source . --region europe-west1 --allow-unauthenticated
+  ```
+
+### 2. Frontend (Vercel)
+Le frontend est connecté au dépôt GitHub.
+- **Build** : `npm run build` (Vite)
+- **Déploiement** : Automatique à chaque push sur `main`.
+
+---
+
+## 🔄 CI/CD (Intégration & Déploiement Continus)
+
+Une pipeline **GitHub Actions** (`.github/workflows/ci-cd.yml`) est en place pour automatiser le cycle de vie de l'application.
+
+### Étapes du Pipeline :
+1.  **Tests (CI)** : À chaque Push/Pull Request, les tests unitaires (`backend` et `frontend`) sont exécutés.
+2.  **Build** : Vérification que l'application compile sans erreur.
+3.  **Deploy (CD)** : Si les tests passent sur la branche `main`, le backend est automatiquement déployé sur Cloud Run.
+
+> 📘 **Guide de configuration** : Voir [GUIDE_CI_CD.md](./GUIDE_CI_CD.md) pour configurer les secrets GitHub.
+
+---
+
+## 📊 Monitoring & Observabilité
+
+L'application intègre des sondes pour surveiller son état de santé en production.
+
+### 1. Health Check Endpoint
+Une route dédiée permet aux load balancers de vérifier l'état du service.
+- **URL** : `/health`
+- **Réponse** (JSON) :
+  ```json
+  {
+    "uptime": 350.2,
+    "timestamp": 1705342000,
+    "message": "OK",
+    "memoryUsage": { ... },
+    "cpuUsage": { ... }
+  }
+  ```
+
+### 2. Logging Structuré
+Le backend utilise **Winston** pour générer des logs au format JSON.
+- Cela permet l'intégration native avec **Google Cloud Logging**.
+- Les erreurs sont tracées avec stacktrace et contexte (IP, Méthode, Path).
+
+---
+
+## 🛠️ Installation Locale
+
+### Prérequis
+- Node.js 18+
+- Compte Google Cloud & Firebase
+
+### Démarrage
 ```bash
-cd backend
-npm run deploy
+# 1. Cloner le projet
+git clone <url-du-repo>
+
+# 2. Installer les dépendances
+npm install
+cd backend && npm install
+cd ../frontend && npm install
+
+# 3. Configurer les variables d'environnement
+# (Créer .env dans backend et frontend selon les exemples)
+
+# 4. Lancer le projet
+cd ..
+npm run dev
 ```
 
-### Frontend (Firebase Hosting + AWS)
-```bash
-cd frontend
-npm run deploy:firebase
-npm run deploy:aws
-```
+L'application sera accessible sur :
+- Frontend : http://localhost:5173
+- Backend : http://localhost:3001
 
-## 🔄 CI/CD
+---
 
-Le projet utilise GitHub Actions pour automatiser :
-1. Tests unitaires
-2. Build du front et du back
-3. Déploiement automatique sur Cloud Run et Firebase/AWS
-4. Notifications de succès/erreur
-
-## 📊 Monitoring
-
-- Cloud Monitoring pour la supervision du backend
-- Cloud Logging pour les journaux applicatifs
-- Tableaux de bord (trafic, temps de réponse, erreurs)
-
-## 🧪 Tests
-
-```bash
-# Tests backend
-npm run test:backend
-
-# Tests frontend
-npm run test:frontend
-
-# Tous les tests
-npm test
-```
-
-## 📚 Documentation API
-
-L'API REST est documentée avec Swagger disponible sur `/api-docs` en développement.
-
-## 🤝 Contribution
-
-1. Fork le projet
-2. Créer une branche feature (`git checkout -b feature/AmazingFeature`)
-3. Commit les changements (`git commit -m 'Add some AmazingFeature'`)
-4. Push vers la branche (`git push origin feature/AmazingFeature`)
-5. Ouvrir une Pull Request
-
-## 📄 Licence
-
-Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
-
-## 👥 Auteurs
-
-- Votre nom - Développement initial
-
-## 🙏 Remerciements
-
-- Google Cloud Platform
-- Amazon Web Services
-- Firebase
-- Google Maps Platform
+## 📝 Auteurs
+Projet réalisé dans le cadre du module "Développer pour le Cloud".

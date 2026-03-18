@@ -5,8 +5,16 @@
  * @param {Object} res - Réponse Express
  * @param {Function} next - Fonction suivante
  */
+const logger = require('../utils/logger');
+
 const errorHandler = (err, req, res, next) => {
-  console.error('Erreur:', err);
+  logger.error('Erreur API:', {
+    message: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method,
+    ip: req.ip
+  });
 
   // Erreur de validation Joi
   if (err.isJoi) {

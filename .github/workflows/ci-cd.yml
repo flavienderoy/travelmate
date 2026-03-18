@@ -1,195 +1,94 @@
-name: CI/CD Pipeline
+name: TravelMate CI/CD
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ "main" ]
   pull_request:
-    branches: [ main ]
-
-env:
-  NODE_VERSION: '18'
-  GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
-  FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+    branches: [ "main" ]
 
 jobs:
-  test-backend:
+  # 1. Tests Frontend & Backend
+  test-and-build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./backend
-    
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: backend/package-lock.json
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Run tests
-      run: npm test
-    
-    - name: Run linting
-      run: npm run lint || true
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  test-frontend:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./frontend
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Run tests
-      run: npm test
-    
-    - name: Run linting
-      run: npm run lint || true
+      # Setup Backend
+      - name: Setup Node.js (Backend)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
 
-  build-and-deploy-backend:
-    needs: [test-backend]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Google Cloud CLI
-      uses: google-github-actions/setup-gcloud@v2
-      with:
-        service_account_key: ${{ secrets.GCP_SA_KEY }}
-        project_id: ${{ env.GOOGLE_CLOUD_PROJECT }}
-    
-    - name: Configure Docker
-      run: gcloud auth configure-docker
-    
-    - name: Build and push Docker image
-      run: |
-        cd backend
-        docker build -t gcr.io/${{ env.GOOGLE_CLOUD_PROJECT }}/travelmate-backend:${{ github.sha }} .
-        docker push gcr.io/${{ env.GOOGLE_CLOUD_PROJECT }}/travelmate-backend:${{ github.sha }}
-    
-    - name: Deploy to Cloud Run
-      run: |
-        gcloud run deploy travelmate-backend \
-          --image gcr.io/${{ env.GOOGLE_CLOUD_PROJECT }}/travelmate-backend:${{ github.sha }} \
-          --platform managed \
-          --region europe-west1 \
-          --allow-unauthenticated \
-          --set-env-vars NODE_ENV=production
+      - name: Install Backend Dependencies
+        run: |
+          cd backend
+          npm ci
 
-  build-and-deploy-frontend-firebase:
-    needs: [test-frontend]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
-    
-    - name: Install dependencies
-      working-directory: ./frontend
-      run: npm ci
-    
-    - name: Build frontend
-      working-directory: ./frontend
-      run: npm run build
-      env:
-        VITE_API_URL: ${{ secrets.PRODUCTION_API_URL }}
-        VITE_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
-        VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
-        VITE_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-        VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
-        VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
-        VITE_FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
-        VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
-    
-    - name: Deploy to Firebase Hosting
-      uses: FirebaseExtended/action-hosting-deploy@v0
-      with:
-        repoToken: '${{ secrets.GITHUB_TOKEN }}'
-        firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
-        channelId: live
-        projectId: ${{ env.FIREBASE_PROJECT_ID }}
+      - name: Test Backend
+        run: |
+          cd backend
+          npm test
 
-  build-and-deploy-frontend-aws:
-    needs: [test-frontend]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
-    
-    - name: Install dependencies
-      working-directory: ./frontend
-      run: npm ci
-    
-    - name: Build frontend
-      working-directory: ./frontend
-      run: npm run build
-      env:
-        VITE_API_URL: ${{ secrets.PRODUCTION_API_URL }}
-        VITE_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
-        VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
-        VITE_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-        VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
-        VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
-        VITE_FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
-        VITE_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
-    
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: eu-west-1
-    
-    - name: Deploy to S3
-      run: |
-        aws s3 sync frontend/dist/ s3://${{ secrets.AWS_S3_BUCKET }} --delete
-        aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+      # Setup Frontend
+      - name: Setup Node.js (Frontend)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
 
-  notify:
-    needs: [build-and-deploy-backend, build-and-deploy-frontend-firebase, build-and-deploy-frontend-aws]
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Test Frontend
+        run: |
+          cd frontend
+          npm test -- --run
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          # Mock env vars for build if needed to prevent failure
+          export VITE_API_URL=http://localhost:3001
+          npm run build
+
+  # 2. Deploy Backend to Cloud Run (Only on push to main)
+  deploy-backend:
+    needs: test-and-build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    if: always()
     
     steps:
-    - name: Notify success
-      if: ${{ needs.build-and-deploy-backend.result == 'success' && needs.build-and-deploy-frontend-firebase.result == 'success' && needs.build-and-deploy-frontend-aws.result == 'success' }}
-      run: |
-        echo "✅ Déploiement réussi sur tous les environnements"
-    
-    - name: Notify failure
-      if: ${{ needs.build-and-deploy-backend.result == 'failure' || needs.build-and-deploy-frontend-firebase.result == 'failure' || needs.build-and-deploy-frontend-aws.result == 'failure' }}
-      run: |
-        echo "❌ Échec du déploiement sur au moins un environnement"
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Google Auth
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: travelmate-api
+          source: ./backend
+          region: europe-west1
+          # NOTE: env_vars.yaml should ideally be handled via secrets for sensitive data
+          # But since we have it in the repo (per user setup), we use it.
+          # Ideally, you should replace this with `env_vars: |-` and use secrets.
+          env_vars_file: backend/env_vars.yaml
+          flags: '--allow-unauthenticated'
+
+  # 3. Frontend Deployment is handled by Vercel GitHub Integration automatically
+  # We just verify the build passed in step 1.
