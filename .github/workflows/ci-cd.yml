@@ -85,9 +85,13 @@ jobs:
           source: ./backend
           region: europe-west1
           # NOTE: env_vars.yaml should ideally be handled via secrets for sensitive data
-          # But since we have it in the repo (per user setup), we use it.
-          # Ideally, you should replace this with `env_vars: |-` and use secrets.
-          env_vars_file: backend/env_vars.yaml
+          # We provide the environment variables directly since env_vars.yaml is ignored securely by git
+          env_vars: |-
+            NODE_ENV=production
+            GOOGLE_CLOUD_PROJECT_ID=travelmate-ynov
+            FIREBASE_PROJECT_ID=travelmate-ynov
+            GOOGLE_CLOUD_STORAGE_BUCKET=travelmate-ynov-storage
+            CORS_ORIGIN=https://travelmate-pi-eight.vercel.app
           flags: '--allow-unauthenticated'
 
   # 3. Frontend Deployment is handled by Vercel GitHub Integration automatically
